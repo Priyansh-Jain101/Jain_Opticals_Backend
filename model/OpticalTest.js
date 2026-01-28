@@ -37,8 +37,9 @@ const OpticalTestSchema = new Schema({
         type: String,
     },
     date: {
-        type: String,
-        default: () => new Date().toLocaleString("en-US"),
+        type: Date,
+        // default: () => new Date().toLocaleString("en-US"),
+        default: Date.now
     },
 
     customerId: {

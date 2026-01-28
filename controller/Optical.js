@@ -7,11 +7,24 @@ module.exports.home = (req, res)=>{
     res.send("listening");
 }
 
-module.exports.listTestData = wrapAsync(async (req, res)=>{
-    let fullData = await OpticalData.find({}).sort({date: -1}); // latest data first
+module.exports.listTestData = wrapAsync(async (req, res) => {
 
-    res.json(fullData);
+  const fullData = await OpticalData.find({});
+
+  fullData.sort((a, b) => {
+    const d1 = new Date(a.date);
+    const d2 = new Date(b.date);
+
+    // compare only YYYY-MM-DD
+    const day1 = d1.toISOString().slice(0, 10);
+    const day2 = d2.toISOString().slice(0, 10);
+
+    return day2.localeCompare(day1); // descending
+  });
+
+  res.json(fullData);
 });
+
 
 module.exports.customerData = wrapAsync(async (req, res)=>{
     let {id} = req.params;
@@ -46,6 +59,27 @@ module.exports.addCustomer = wrapAsync(async (req, res) => {
       prescriptions = JSON.parse(prescriptions);  // convert it into object
     }
 
+    //  handle date field
+    let date; //  declare variable
+
+    if (req.body.date) {
+      const selectedDate = new Date(req.body.date); // yyyy-mm-dd
+      const now = new Date();
+
+      // set current time to selected date
+      selectedDate.setHours(
+        now.getHours(),
+        now.getMinutes(),
+        now.getSeconds(),
+        now.getMilliseconds()
+      );
+
+      date = selectedDate;
+    } else {
+      date = new Date(); // fallback to now
+    }
+
+
     const newData = new OpticalData({
       name,
       age,
@@ -59,6 +93,7 @@ module.exports.addCustomer = wrapAsync(async (req, res) => {
       paidAmount,
       dueAmount,
       customerService,
+      date,
       customerId: uuid(),
     });
 
@@ -82,11 +117,6 @@ module.exports.addCustomer = wrapAsync(async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
-
-
-
-
-
 
 module.exports.updateData = wrapAsync(async (req, res)=>{
     let {id} = req.params;
@@ -146,6 +176,26 @@ module.exports.editCustomerData = wrapAsync(async (req, res) => {
     }
   });
 
+  //  handle date field
+  if (req.body.date) {
+  const selectedDate = new Date(req.body.date);
+
+  // get old stored date
+  const existingCustomer = await OpticalData.findById(id);
+
+  if (existingCustomer?.date) {
+    selectedDate.setHours(
+      existingCustomer.date.getHours(),
+      existingCustomer.date.getMinutes(),
+      existingCustomer.date.getSeconds(),
+      existingCustomer.date.getMilliseconds()
+    );
+  }
+
+  req.body.date = selectedDate;
+}
+
+  
   //  Create update object safely
   const updateData = { ...req.body };
 

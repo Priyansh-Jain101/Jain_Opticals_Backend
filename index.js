@@ -6,12 +6,14 @@ const cors = require("cors");
 
 // require the router objects
 const opticalRoutes = require("./routes/Optical.js");
+const compression = require("compression");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(compression())
 
 const port = process.env.PORT || 8080;
 
@@ -24,7 +26,7 @@ main()
   });
 
 async function main() {
-  await mongoose.connect(process.env.MONGO_URI);
+  await mongoose.connect(process.env.MONGO_URL);
 }
 
 // routes middleware
